@@ -5,12 +5,21 @@ from flask_restful import Resource, reqparse
 SHORT_URL_LENGTH = 7
 
 
+def non_empty_string(string):
+    string = string.strip()
+    if not string:
+        raise ValueError("Must not be empty string")
+    return string
+
+
 class URLShortener(Resource):
     def __init__(self, url_hash_mapping, shortener_web_server):
         self.url_hash_mapping = url_hash_mapping
         self.shortener_web_server = shortener_web_server
         self.parser = reqparse.RequestParser()
-        self.parser.add_argument("url", required=True, location="json")
+        self.parser.add_argument(
+            "url", required=True, type=non_empty_string, location="json"
+        )
         super().__init__()
 
     def get_url_hash(self, url):
