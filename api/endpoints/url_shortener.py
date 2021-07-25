@@ -3,11 +3,12 @@ import hashlib
 from flask_restful import Resource, reqparse
 
 SHORT_URL_LENGTH = 7
-SHORTENER_WEB_SERVER = "https://abc.com"
 
 
 class URLShortener(Resource):
-    def __init__(self):
+    def __init__(self, url_hash_mapping, shortener_web_server):
+        self.url_hash_mapping = url_hash_mapping
+        self.shortener_web_server = shortener_web_server
         self.parser = reqparse.RequestParser()
         self.parser.add_argument("url", required=True, location="json")
         super().__init__()
@@ -20,7 +21,14 @@ class URLShortener(Resource):
     def post(self):
         args = self.parser.parse_args()
         url = args["url"]
-        url_hash = self.get_url_hash(url)
-        short_url = "{}/{}".format(SHORTENER_WEB_SERVER, url_hash)
+        if url in self.url_hash_mapping:
+            url_hash = self.url_hash_mapping[url]
+            short_url = "{}/{}".format(self.shortener_web_server, url_hash)
+        else:
+
+            url_hash = self.get_url_hash(url)
+            self.url_hash_mapping[url] = url_hash
+            short_url = "{}/{}".format(self.shortener_web_server, url_hash)
+
         response = {"short_url": short_url, "url": url}
         return response
