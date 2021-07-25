@@ -1,0 +1,9 @@
+version: "3"
+services: 
+    url-shortener:
+        build: 
+            context: .
+        ports:
+            - "5000:5000"
+        env_file: 
+            - .flaskenv
