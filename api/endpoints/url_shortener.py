@@ -1,6 +1,8 @@
 import base64
+import uuid
 import hashlib
 from flask_restful import Resource, reqparse
+from flask import request
 
 SHORT_URL_LENGTH = 7
 
@@ -22,22 +24,28 @@ class URLShortener(Resource):
         )
         super().__init__()
 
-    def get_url_hash(self, url):
-        md5_hash = hashlib.md5(url.encode("utf-8")).digest()
-        url_hash = base64.urlsafe_b64encode(md5_hash).decode("ascii")
-        return url_hash[:SHORT_URL_LENGTH]
+    def get_random_hash(self):
+        randon_hash = str(uuid.uuid4())
+        return randon_hash
+
+    def get(self):
+        short_url_hash = request.args["short_url_hash"]
+        if short_url_hash in self.url_hash_mapping:
+            return {"url": self.url_hash_mapping[short_url_hash]}
+        else:
+            return {"message": "Not able to find url for given short url"}
 
     def post(self):
         args = self.parser.parse_args()
         url = args["url"]
-        if url in self.url_hash_mapping:
-            url_hash = self.url_hash_mapping[url]
-            short_url = "{}/{}".format(self.shortener_web_server, url_hash)
+        temp_url = url.lstrip(self.shortener_web_server + "/")
+        if temp_url in self.url_hash_mapping:
+            return {
+                "short_url": url,
+                "url": self.url_hash_mapping[temp_url],
+            }
         else:
-
-            url_hash = self.get_url_hash(url)
-            self.url_hash_mapping[url] = url_hash
+            url_hash = self.get_random_hash()
             short_url = "{}/{}".format(self.shortener_web_server, url_hash)
-
-        response = {"short_url": short_url, "url": url}
-        return response
+            self.url_hash_mapping[url_hash] = url
+            return {"short_url": short_url, "url": url}
